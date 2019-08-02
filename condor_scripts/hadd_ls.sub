@@ -1,0 +1,8 @@
+executable              = hadd_ls.sh 
+arguments               = "/eos/experiment/ship/user/sshirobo/$(directory) $(input_file)"
+output = output/sim.$(ClusterId).$(ProcId).out
+error = error/sim.$(ClusterId).$(ProcId).err
+log = log/sim.$(ClusterId).log
+transfer_output_files = ""
++JobFlavour = "workday"
+queue
