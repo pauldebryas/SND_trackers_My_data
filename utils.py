@@ -145,7 +145,7 @@ class DataPreprocess(object):
             TT_sim.append(TT_resp)
             showers_mc.append(shower_mc)
             initial_indeces.append(index)
-        print(no_ele, out_of_tt, low_energy)
+        # print(no_ele, out_of_tt, low_energy)
         return TT_sim, showers_mc, initial_indeces
 
     def check_position(self, z_pos):
@@ -171,7 +171,7 @@ class DataPreprocess(object):
         showers_sim, showers_mc, initial_indeces= self.extract_showers(showers_data_root)
         MC_df = pd.DataFrame(showers_mc)
         TT_df = pd.DataFrame(showers_sim)
-        print(MC_df.shape, TT_df.shape)
+        # print(MC_df.shape, TT_df.shape)
 
         # Remove events, that have hits separated with more then 20ns
         # This is silly cut because of absence of true detector digitisation
@@ -184,7 +184,7 @@ class DataPreprocess(object):
         n_hits = TT_df.X.map(lambda x: len(x))
         TT_df = TT_df[n_hits > n_hits_threshold]
         MC_df = MC_df[n_hits > n_hits_threshold]
-        print(MC_df.shape)
+        # print(MC_df.shape)
 
         # Select MC showers, which have passed the cuts
         indeces = MC_df.index.values
