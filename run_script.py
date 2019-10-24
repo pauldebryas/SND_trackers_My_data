@@ -1,5 +1,6 @@
 from utils import DataPreprocess, Parameters
 import torch
+#------------------------------------------- Not in the notebook (see if cuda is available)
 try:
     assert(torch.cuda.is_available())
 except:
@@ -10,7 +11,7 @@ print("\nWelcome!\n\nCUDA devices available:\n")
 for i in range(n_devices):
     print("\t{}\twith CUDA capability {}".format(torch.cuda.get_device_name(device=i), torch.cuda.get_device_capability(device=i)))
 print("\n")
-    
+#------------------------------------------  In the notebook (miss 'from IPython import display' ??)
 from net import SNDNet, MyDataset, digitize_signal
 device = torch.device("cuda", 0)
 from matplotlib import pylab as plt
@@ -21,25 +22,31 @@ from sklearn.metrics import mean_squared_error
 import time
 from tqdm import tqdm
 import os
+#----------------------------------------- Not in the notebook
 import gc
-
+#----------------------------------------- In the notebook 
 params = Parameters("9X0")
 data_preprocessor = DataPreprocess(params)
 filename = "/data/ship_tt/9X0_500k.root"
-
+#----------------------------------------- Not in the notebook: it is reading and analysing data by chunk
 print("\nReading data now. Be patient...")
 processed_file_path = os.path.expandvars("$HOME/ship_tt_processed_data")
 os.system("mkdir -p {}".format(processed_file_path))
 step_size = 5000
 file_size = 500000
 n_steps = int(file_size / step_size)
-chunks = []
+
+chunklist_TT_df = []
+chunklist_y_full = []
+
 for i in tqdm(range(n_steps)):
     gc.collect()
     raw_chunk = data_preprocessor.open_shower_file(filename, start=i*step_size, stop=(i+1)*step_size)
     outpath = processed_file_path + "/{}".format(i)
     os.system("mkdir -p {}".format(outpath))
     data_preprocessor.clean_data_and_save(raw_chunk, outpath)
+    chunklist_TT_df.append(pd.read_pickle(os.path.join(outpath, "tt_cleared.pkl")))
+    chunklist_y_full.append(pd.read_pickle(os.path.join(outpath, "y_cleared.pkl")))
 
 #print("\nMerging chunks...")
 #showers_root = np.concatenate(chunks)

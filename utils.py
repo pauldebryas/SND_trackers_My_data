@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import json
 from bisect import bisect_left
+#from matplotlib import pylab as plt
 
 CM_TO_MUM = 1e4
 
@@ -201,3 +202,45 @@ class DataPreprocess(object):
 
         TT_df.to_pickle(os.path.join(save_folder, "tt_cleared.pkl"))
         nu_params.to_pickle(os.path.join(save_folder, "y_cleared.pkl"))
+'''
+class Logger(object):
+    def __init__(self):
+        pass
+
+    def plot_losses(self, epoch, num_epochs, start_time):
+        plt.figure()
+        f, (ax1, ax2) = plt.subplots(1, 2, figsize=(16,6))
+        ax1.set_title("Loss")
+        ax1.set_xlabel("#Epoch")
+        ax1.set_ylabel("loss")
+        ax1.plot(train_loss, 'b', label='Train loss')
+        ax1.legend(loc='best')
+        ax1.grid()
+
+        ax2.set_title("MSE error")
+        ax2.set_xlabel("#Epoch")
+        ax2.set_ylabel("E error")
+        ax2.plot(val_accuracy_1, 'b', label='Test energy')
+
+        ax3 = ax2.twinx()
+        ax3.set_ylabel("Dist error")
+        ax3.plot(val_accuracy_2, 'r', label='Test dist')
+        ax2.legend(loc='upper right')
+        ax3.legend(loc='lower left')
+        ax2.grid()
+        ax3.grid()
+
+        nameofthefig="Figures/Loggerfigure_epoch_{}.png".format(epoch + 1)
+        plt.savefig(nameofthefig)
+        #plt.show()
+        plt.close()
+
+        # Then we print and save the results for this epoch:
+        print("Epoch {} of {} took {:.3f}s".format(
+            epoch + 1, num_epochs, time.time() - start_time))
+        print("  training loss (in-iteration): \t{:.6f}".format(
+            train_loss[-1]))
+        print("  validation Energy:\t\t{:.4f} %".format(val_accuracy_1[-1]))
+        print("  validation distance:\t\t{:.4f} %".format(val_accuracy_2[-1]))
+
+'''
