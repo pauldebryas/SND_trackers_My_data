@@ -35,18 +35,18 @@ class SNDNet(nn.Module):
         super().__init__()
         self.model = nn.Sequential(
             Block(n_input_filters, 32, pool=True),
-            Block(32, 32, pool=False),
+            Block(32, 32, pool=True),
             Block(32, 64, pool=True),
             Block(64, 64, pool=True),
-            Block(64, 128, pool=True),
-            Block(128, 128, pool=True),
+            #Block(32, 32, pool=True),
+            #Block(128, 128, pool=False),
             Flatten(),
-            nn.Linear(768, 2),
+            nn.Linear(256, 1),
             # nn.ReLU(),
             # nn.Dropout(p=0.5),
             # nn.Linear(512, 512),
             # nn.ReLU(),
-            # nn.Linear(512, 2)
+            #nn.Linear(1280,2)
         )
 
     def compute_loss(self, X_batch, y_batch):
@@ -106,7 +106,7 @@ def digitize_signal(event, params, filters=1):
              int(np.ceil(params.snd_params["X_HALF_SIZE"] * 2 * CM_TO_MUM /
                          params.snd_params["RESOLUTION"])))
     response = np.zeros(shape)
-
+    
     for x_index, y_index, z_pos in zip(np.floor((event['X'] + params.snd_params["X_HALF_SIZE"]) * CM_TO_MUM /
                                                 params.snd_params["RESOLUTION"]).astype(int),
                                        np.floor((event['Y'] + params.snd_params["Y_HALF_SIZE"]) * CM_TO_MUM /

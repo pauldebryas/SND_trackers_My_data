@@ -23,7 +23,7 @@ class Parameters(object):
         with open("parameters.json", "r") as f:
             self.snd_params = json.load(f)
         self.tt_positions_ravel = [item for sublist in self.snd_params[configuration]['TT_POSITIONS']
-                                   for item in sublist]
+                for item in sublist]
         # This is used to map index of binary search by Z to index of TT number
         self.tt_map = {1: 0, 3: 1, 5: 2, 7: 3, 9: 4, 11: 5, 13: 6}
 
@@ -146,7 +146,7 @@ class DataPreprocess(object):
             TT_sim.append(TT_resp)
             showers_mc.append(shower_mc)
             initial_indeces.append(index)
-        # print(no_ele, out_of_tt, low_energy)
+        #print(no_ele, out_of_tt, low_energy)
         return TT_sim, showers_mc, initial_indeces
 
     def check_position(self, z_pos):
@@ -185,12 +185,27 @@ class DataPreprocess(object):
         n_hits = TT_df.X.map(lambda x: len(x))
         TT_df = TT_df[n_hits > n_hits_threshold]
         MC_df = MC_df[n_hits > n_hits_threshold]
-        # print(MC_df.shape)
+        #print(MC_df.shape)
+
+        # Remove events with a shooted electron with more energy than the threshold energy
+        #Energy_i = []
+        #error_number = 0
+        #for i in range(len(MC_df)):
+        #     if (MC_df['PZ'].get(i) is not None):
+        #         Energy_i.append(np.sqrt(MC_df['PX'][i][0]*MC_df['PX'][i][0]+MC_df['PY'][i][0]*MC_df['PY'][i][0]+MC_df['PZ'][i][0]*MC_df['PZ'][i][0]))
+        #     else:
+        #         #Energy_i.append(-1)
+        #         error_number += 1        
+        #for j in range(error_number):
+        #    Energy_i.append(-1) #else maskE and MC_df doesn't have the same shape: None events make the counting screw up
+        #maskE = (np.array(Energy_i) <= 200) & (np.array(Energy_i) >= 0)
+        #TT_df = TT_df[maskE]
+        #MC_df = MC_df[maskE]
 
         # Select MC showers, which have passed the cuts
         indeces = MC_df.index.values
 
-        nu_params = [[], [], [], []]
+        nu_params = [[], [], [], [],[]]
         for counter, index in enumerate(indeces):
             ele_mask = np.logical_and(showers_mc[index]["MotherId"] == -1, np.abs(showers_mc[index]["PdgCode"]) == 11)
             nu_params[0].append(np.linalg.norm([showers_mc[index][P][ele_mask] for P in ['PX', 'PY', 'PZ']]))
@@ -198,49 +213,8 @@ class DataPreprocess(object):
                                 self.params.snd_params[self.params.configuration]["END_OF_BRICK"])
             nu_params[2].append(showers_mc[index]['X'][ele_mask][0])
             nu_params[3].append(showers_mc[index]['Y'][ele_mask][0])
-        nu_params = pd.DataFrame(np.array(nu_params).T, columns=["E", "Z", "X", "Y"])
-
+            nu_params[4].append(np.sqrt(showers_mc[index]['PX'][ele_mask][0]*showers_mc[index]['PX'][ele_mask][0]+showers_mc[index]['PY'][ele_mask][0]*showers_mc[index]['PY'][ele_mask][0])/showers_mc[index]['PZ'][ele_mask][0])
+        nu_params = pd.DataFrame(np.array(nu_params).T, columns=["E", "Z", "X", "Y","THETA"])
         TT_df.to_pickle(os.path.join(save_folder, "tt_cleared.pkl"))
         nu_params.to_pickle(os.path.join(save_folder, "y_cleared.pkl"))
-'''
-class Logger(object):
-    def __init__(self):
-        pass
 
-    def plot_losses(self, epoch, num_epochs, start_time):
-        plt.figure()
-        f, (ax1, ax2) = plt.subplots(1, 2, figsize=(16,6))
-        ax1.set_title("Loss")
-        ax1.set_xlabel("#Epoch")
-        ax1.set_ylabel("loss")
-        ax1.plot(train_loss, 'b', label='Train loss')
-        ax1.legend(loc='best')
-        ax1.grid()
-
-        ax2.set_title("MSE error")
-        ax2.set_xlabel("#Epoch")
-        ax2.set_ylabel("E error")
-        ax2.plot(val_accuracy_1, 'b', label='Test energy')
-
-        ax3 = ax2.twinx()
-        ax3.set_ylabel("Dist error")
-        ax3.plot(val_accuracy_2, 'r', label='Test dist')
-        ax2.legend(loc='upper right')
-        ax3.legend(loc='lower left')
-        ax2.grid()
-        ax3.grid()
-
-        nameofthefig="Figures/Loggerfigure_epoch_{}.png".format(epoch + 1)
-        plt.savefig(nameofthefig)
-        #plt.show()
-        plt.close()
-
-        # Then we print and save the results for this epoch:
-        print("Epoch {} of {} took {:.3f}s".format(
-            epoch + 1, num_epochs, time.time() - start_time))
-        print("  training loss (in-iteration): \t{:.6f}".format(
-            train_loss[-1]))
-        print("  validation Energy:\t\t{:.4f} %".format(val_accuracy_1[-1]))
-        print("  validation distance:\t\t{:.4f} %".format(val_accuracy_2[-1]))
-
-'''
