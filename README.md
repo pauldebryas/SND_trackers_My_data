@@ -2,6 +2,9 @@
 ML code for energy reconstruction of SND@LHC
 
 ## Instructions by Paul 
+
+[in progress]
+
 The files needed to do the energy reconstruction are:
 
 -ship_tt.yml : Before anything, you need to create the needed environement with the folowing comand "conda env create -f ship_tt.yml" (to do once). Then, each time you log in, you need to activate the environment with the command "conda activate ship_tt".
