@@ -1,26 +1,23 @@
 #!/bin/bash
-source /afs/cern.ch/user/s/sshirobo/FairShipRun/config.sh
-set -ux
+source /cvmfs/ship.cern.ch/develop/setUp.sh
+source /afs/cern.ch/user/p/pdebryas/private/aliconfig.sh
+#set -ux
 echo "Starting script."
-DIR=$1
+
+ClusterId=$1
 ProcId=$2
+NJOBS=500
+NTOTAL=200000
+
 LSB_JOBINDEX=$((ProcId+1))
-OUTPUT_PATH=/eos/experiment/ship/user/sshirobo/"$DIR"/"$LSB_JOBINDEX"
-NTOTAL=500000
-NJOBS=$3
-TANK=6
-ISHIP=3
+OUTPUT_PATH=/afs/cern.ch/work/p/pdebryas/
+
 SEED=$(( RANDOM ))
-N=$(( NTOTAL/NJOBS + ( LSB_JOBINDEX == NJOBS ? NTOTAL % NJOBS : 0 ) ))
+N=$(( NTOTAL/NJOBS ))
 FIRST=$(((NTOTAL/NJOBS)*(LSB_JOBINDEX-1)))
-if eos stat "$OUTPUT_PATH"/ship.conical.PG_11-TGeant4.root; then
-    echo "Target exists, nothing to do."
-    exit 0
-else
-    python2 "$FAIRSHIP"/macro/run_simScript.py --PG --Estart 1 --Eend 40 --pID 11 --nEvents $N --firstEvent $FIRST\
-            --seed $SEED --tankDesign $TANK --nuTauTargetDesign $ISHIP
-    xrdcp ship.conical.PG_11-TGeant4.root root://eospublic.cern.ch/"$OUTPUT_PATH"/ship.conical.PG_11-TGeant4.root
-#    if [ "$LSB_JOBINDEX" -eq 1 ]; then
-#        xrdcp geofile_full.conical.MuonBack-TGeant4.root root://eospublic.cern.ch//eos/experiment/ship/user/olantwin/"$DIR"/
-#    fi
-fi
+
+python "$FAIRSHIP"/macro/run_simScript.py --PG --pID 11 --Estart 200 --Eend 400 -n $N --firstEvent $FIRST --seed $SEED
+mkdir "$OUTPUT_PATH"/$ProcId
+mv ship.conical.PG_11-TGeant4.root "$OUTPUT_PATH"/$ProcId/ship.conical.PG_11-TGeant4_"$ProcId".root
+rm geofile_full.conical.PG_11-TGeant4.root
+rm ship.params.conical.PG_11-TGeant4.root

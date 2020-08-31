@@ -1,9 +1,8 @@
 executable = pg_simulation.sh
-arguments = $(directory) $(ProcId) $(N)
+arguments = $(ClusterId) $(ProcId)
 output = output/sim.$(ClusterId).$(ProcId).out
 error = error/sim.$(ClusterId).$(ProcId).err
 log = log/sim.$(ClusterId).log
-requirements = (CERNEnvironment =!= "qa")
-transfer_output_files = ""
 +JobFlavour = "tomorrow"
-queue $(N)
++MaxRuntime = 60000
+queue 500
