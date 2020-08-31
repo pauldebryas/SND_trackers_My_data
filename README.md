@@ -2,7 +2,23 @@
 ML code for energy reconstruction of SND@LHC
 
 ## Instructions by Paul 
-(work in progress)...
+The files needed to do the energy reconstruction are:
+
+-ship_tt.yml : Before anything, you need to create the needed environement with the folowing comand "conda env create -f ship_tt.yml" (to do once). Then, each time you log in, you need to activate the environment with the command "conda activate ship_tt".
+
+-parameters.json: File in which the geometry of the SND is encoded. Numbers following "4X0" idicate the position of the TT planes used in the simulation. Initially, you need to put "Y_HALF_SIZE":21.5 and "X_HALF_SIZE":26.0.
+The other geometry configuration (9X0, 5X0, ...) were used for previous analysis and will not be used here.
+
+-utils.py: useful function, mainly to preprocess the raw MC data
+
+-net.py: Class and function for the CNN. Class SNDNet describe the geometry of the network, you can play with it.
+
+-coord_conv.py: useful functions for the implementation of the CoordConvmethod describe in the folowing paper: https://arxiv.org/pdf/1807.03247.pdf
+
+-Preprocessing_script.py
+-Paul_run_script.py
+
+The other files (.swp, Debug.py, parameters.py) aren't necesarry.
 
 
 ## Useful links
