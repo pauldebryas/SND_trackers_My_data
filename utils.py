@@ -28,6 +28,22 @@ class Parameters(object):
         self.tt_map = {1: 0, 3: 1, 5: 2, 7: 3, 9: 4, 11: 5, 13: 6}
 
 
+class Parameters_reduced(object):
+    """
+    Class to store all reduced parameters of the geometry configuration
+    """
+    def __init__(self, configuration: str):
+        """
+        :param configuration: String of used config: 10X0, 9X0, 6X0, 5X0
+        """
+        self.configuration = configuration
+        with open("parameters_reduced.json", "r") as f:
+            self.snd_params = json.load(f)
+        self.tt_positions_ravel = [item for sublist in self.snd_params[configuration]['TT_POSITIONS']
+                for item in sublist]
+        # This is used to map index of binary search by Z to index of TT number
+        self.tt_map = {1: 0, 3: 1, 5: 2, 7: 3, 9: 4, 11: 5, 13: 6}
+
 class DataPreprocess(object):
     def __init__(self, parameters):
         self.params = parameters
