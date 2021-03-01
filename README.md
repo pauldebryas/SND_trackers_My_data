@@ -5,7 +5,7 @@ ML code for energy reconstruction of neutrino of the SND@LHC geometry
 
 [in progress]
 
-### To do:
+###### To do:
 
 0) ship_tt.yml : Before anything, you need to create the needed environement with the folowing comand "conda env create -f ship_tt.yml" (to do once). Then, each time you log in, you need to activate the environment with the command "conda activate ship_tt".
 
@@ -28,7 +28,7 @@ In the other files, only functions are written:
 
 -coord_conv.py: useful functions for the implementation of the CoordConvmethod describe in the folowing paper: https://arxiv.org/pdf/1807.03247.pdf
 
-### usual mistakes and how to handle them
+###### usual mistakes and how to handle them
 
 ## Useful links
  - FairShip: https://github.com/ShipSoft/FairShip
