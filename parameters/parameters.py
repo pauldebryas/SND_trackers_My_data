@@ -14,6 +14,8 @@
 #"Y_max":        y position of the highest point of the Scifi planes
 #"TT_POSITIONS": z position of the Scifi planes (front and end of each plane)
 
+#"RESOLUTION":   spatial resolution of the tracker in micrometer
+
 import json
 
 snd_parameters = {
