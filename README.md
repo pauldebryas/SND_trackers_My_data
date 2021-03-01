@@ -1,28 +1,34 @@
 # EM shower reconstruction with the SciFi at SND@LHC
-ML code for energy reconstruction of SND@LHC
+ML code for energy reconstruction of neutrino of the SND@LHC geometry
 
 ## Instructions by Paul 
 
 [in progress]
 
-The files needed to do the energy reconstruction are:
+### To do:
 
--ship_tt.yml : Before anything, you need to create the needed environement with the folowing comand "conda env create -f ship_tt.yml" (to do once). Then, each time you log in, you need to activate the environment with the command "conda activate ship_tt".
+0) ship_tt.yml : Before anything, you need to create the needed environement with the folowing comand "conda env create -f ship_tt.yml" (to do once). Then, each time you log in, you need to activate the environment with the command "conda activate ship_tt".
 
--parameters.json: File in which the geometry of the SND is encoded. Numbers following "4X0" idicate the position of the TT planes used in the simulation. Initially, you need to put "Y_HALF_SIZE":21.5 and "X_HALF_SIZE":26.0.
-The other geometry configuration (9X0, 5X0, ...) were used for previous analysis and will not be used here.
+1) parameters/parameters.py: In this file, you should write the geometry parameters of your SND@LHC detector. Then run "python parameters.py" to create the parameters.json file inside the parameters/ folder, needed for the code.
 
--utils.py: useful function, mainly to preprocess the raw MC data
+2) Preprocessing_script.py: This file is use to transform the raw data file (root file) to processed data (pickle file), in which only the needed informations are stored. It is reading and analysing data by chunk instead of all at the same time because of memory leak problem. Which mean from a single root file, corresponding pickle files will be stored in n different folders (from 0 to n), and in each of these folders, we will find 2 pickles files:
+tt_cleared.pkl: Information of the tracker (position of the hits in the scifi planes, ...)
+y_cleared.pkl:  Information on the event (energy of the neutrino, Elastic or inelastic event, ...)
+
+First, you need to run "python Preprocessing_script.py Root2Pickle". Then, if you want to display an event, run "python Preprocessing_script.py Event_display" to show what an event looks like (it also display the images dimension: the input of our CNN).
+
+3) Paul_run_script.py: Main script, where the ML magic happens. It train the CNN define in class "SNDNet" (net.py), and it save the network and the prediction every 10 epoch. You can run it with "python Paul_run_script.py".
+
+
+In the other files, only functions are written:
+
+-utils.py: useful function, mainly for the preprocessing part.
 
 -net.py: Class and function for the CNN. Class SNDNet describe the geometry of the network, you can play with it.
 
 -coord_conv.py: useful functions for the implementation of the CoordConvmethod describe in the folowing paper: https://arxiv.org/pdf/1807.03247.pdf
 
--Preprocessing_script.py
--Paul_run_script.py
-
-The other files (.swp, Debug.py, parameters.py) aren't necesarry.
-
+### usual mistakes and how to handle them
 
 ## Useful links
  - FairShip: https://github.com/ShipSoft/FairShip
