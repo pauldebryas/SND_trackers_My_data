@@ -20,7 +20,7 @@ class Parameters(object):
         :param configuration: String of used config: 10X0, 9X0, 6X0, 5X0
         """
         self.configuration = configuration
-        with open("parameters.json", "r") as f:
+        with open("parameters/parameters.json", "r") as f:
             self.snd_params = json.load(f)
         self.tt_positions_ravel = [item for sublist in self.snd_params[configuration]['TT_POSITIONS']
                 for item in sublist]
@@ -28,21 +28,6 @@ class Parameters(object):
         self.tt_map = {1: 0, 3: 1, 5: 2, 7: 3, 9: 4, 11: 5, 13: 6}
 
 
-class Parameters_reduced(object):
-    """
-    Class to store all reduced parameters of the geometry configuration
-    """
-    def __init__(self, configuration: str):
-        """
-        :param configuration: String of used config: 10X0, 9X0, 6X0, 5X0
-        """
-        self.configuration = configuration
-        with open("parameters_reduced.json", "r") as f:
-            self.snd_params = json.load(f)
-        self.tt_positions_ravel = [item for sublist in self.snd_params[configuration]['TT_POSITIONS']
-                for item in sublist]
-        # This is used to map index of binary search by Z to index of TT number
-        self.tt_map = {1: 0, 3: 1, 5: 2, 7: 3, 9: 4, 11: 5, 13: 6}
 
 class DataPreprocess(object):
     def __init__(self, parameters):
@@ -58,7 +43,7 @@ class DataPreprocess(object):
         :return:
         """
         prefixMC = 'MCTrack'
-        prefixTargetPoint = 'TTPoint'
+        prefixTargetPoint = 'ScifiPoint'
         showers_data_root = root_numpy.root2array(filename, treename='cbmsim', start=start, stop=stop, step=step,
                                                   branches=[prefixMC + '.fPx',
                                                             prefixMC + '.fPy',
@@ -106,8 +91,14 @@ class DataPreprocess(object):
             fELoss_sim, fDetectorID_sim, fTrackID_sim, fPdgCode_sim = \
                 shower_data_root
 
+            #Add x, y midpoint
+            x_mid = (self.params.snd_params[self.params.configuration]['X_max']+self.params.snd_params[self.params.configuration]['X_min'])/2
+            y_mid = (self.params.snd_params[self.params.configuration]['Y_max']+self.params.snd_params[self.params.configuration]['Y_min'])/2
+            fStartX_sim -= x_mid
+            fStartY_sim -= y_mid
+
             ## CUTS ON ELECTRON
-            ele_mask = np.logical_and(fMotherId_mc == -1, np.abs(fPdgCode_mc) == 11)
+            ele_mask = np.logical_and(fMotherId_mc == -1, np.abs(fPdgCode_mc) == 12)
             if ele_mask.sum() == 0:
                 no_ele += 1
                 continue
@@ -162,7 +153,11 @@ class DataPreprocess(object):
             TT_sim.append(TT_resp)
             showers_mc.append(shower_mc)
             initial_indeces.append(index)
-        #print(no_ele, out_of_tt, low_energy)
+        print("Number of event that are not nu_e: " + str(no_ele))
+        print("Number of event that are below the energy treshold: " + str(low_energy))    
+        print("Number of event that are upstream TT plane: " + str(out_of_tt))
+        print("length of TT_sim: "+ str(len(TT_sim)))
+        print("length of showers_mc: " + str(len(showers_mc)))
         return TT_sim, showers_mc, initial_indeces
 
     def check_position(self, z_pos):
@@ -221,16 +216,17 @@ class DataPreprocess(object):
         # Select MC showers, which have passed the cuts
         indeces = MC_df.index.values
 
-        nu_params = [[], [], [], [],[]]
+        nu_params = [[], [], [], [],[],[]]
         for counter, index in enumerate(indeces):
-            ele_mask = np.logical_and(showers_mc[index]["MotherId"] == -1, np.abs(showers_mc[index]["PdgCode"]) == 11)
+            ele_mask = np.logical_and(showers_mc[index]["MotherId"] == -1, np.abs(showers_mc[index]["PdgCode"]) == 12)
             nu_params[0].append(np.linalg.norm([showers_mc[index][P][ele_mask] for P in ['PX', 'PY', 'PZ']]))
             nu_params[1].append(showers_mc[index]['Z'][ele_mask][0] -
                                 self.params.snd_params[self.params.configuration]["END_OF_BRICK"])
             nu_params[2].append(showers_mc[index]['X'][ele_mask][0])
             nu_params[3].append(showers_mc[index]['Y'][ele_mask][0])
             nu_params[4].append(np.sqrt(showers_mc[index]['PX'][ele_mask][0]*showers_mc[index]['PX'][ele_mask][0]+showers_mc[index]['PY'][ele_mask][0]*showers_mc[index]['PY'][ele_mask][0])/showers_mc[index]['PZ'][ele_mask][0])
-        nu_params = pd.DataFrame(np.array(nu_params).T, columns=["E", "Z", "X", "Y","THETA"])
+            nu_params[5].append(int(-1))
+        nu_params = pd.DataFrame(np.array(nu_params).T, columns=["E", "Z", "X", "Y","THETA","Label"])
         TT_df.to_pickle(os.path.join(save_folder, "tt_cleared.pkl"))
         nu_params.to_pickle(os.path.join(save_folder, "y_cleared.pkl"))
 

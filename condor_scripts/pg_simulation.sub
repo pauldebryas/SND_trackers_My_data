@@ -1,8 +1,0 @@
-executable = pg_simulation.sh
-arguments = $(ClusterId) $(ProcId)
-output = output/sim.$(ClusterId).$(ProcId).out
-error = error/sim.$(ClusterId).$(ProcId).err
-log = log/sim.$(ClusterId).log
-+JobFlavour = "tomorrow"
-+MaxRuntime = 60000
-queue 500

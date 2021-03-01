@@ -38,10 +38,11 @@ class SNDNet(nn.Module):
             Block(32, 32, pool=True),
             Block(32, 64, pool=True),
             Block(64, 64, pool=True),
+            Block(64, 64, pool=True),
             #Block(32, 32, pool=True),
             #Block(128, 128, pool=False),
             Flatten(),
-            nn.Linear(256, 1),
+            nn.Linear(1024, 1),
             # nn.ReLU(),
             # nn.Dropout(p=0.5),
             # nn.Linear(512, 512),
@@ -53,7 +54,8 @@ class SNDNet(nn.Module):
         X_batch = X_batch.to(self.device)
         y_batch = y_batch.to(self.device)
         logits = self.model(X_batch)
-        return F.smooth_l1_loss(logits, y_batch).mean()
+        return F.mse_loss(logits, y_batch, reduction = 'none').mean()
+        #return F.smooth_l1_loss(logits, y_batch).mean()
 
     def predict(self, X_batch):
         self.model.eval()
@@ -100,19 +102,25 @@ def digitize_signal(event, params, filters=1):
     :param filters: Number of TargetTrackers in the simulation
     :return: numpy tensor of shape (n_filters, H, W).
     """
+    x_half = (params.snd_params[params.configuration]['X_max']-params.snd_params[params.configuration]['X_min'])/2
+    y_half = (params.snd_params[params.configuration]['Y_max']-params.snd_params[params.configuration]['Y_min'])/2
     shape = (filters,
-             int(np.ceil(params.snd_params["Y_HALF_SIZE"] * 2 * CM_TO_MUM /
+             int(np.ceil(y_half * 2 * CM_TO_MUM /
                          params.snd_params["RESOLUTION"])),
-             int(np.ceil(params.snd_params["X_HALF_SIZE"] * 2 * CM_TO_MUM /
+             int(np.ceil(x_half * 2 * CM_TO_MUM /
                          params.snd_params["RESOLUTION"])))
     response = np.zeros(shape)
     
-    for x_index, y_index, z_pos in zip(np.floor((event['X'] + params.snd_params["X_HALF_SIZE"]) * CM_TO_MUM /
+    for x_index, y_index, z_pos in zip(np.floor((event['X'] + x_half) * CM_TO_MUM /
                                                 params.snd_params["RESOLUTION"]).astype(int),
-                                       np.floor((event['Y'] + params.snd_params["Y_HALF_SIZE"]) * CM_TO_MUM /
+                                       np.floor((event['Y'] + y_half) * CM_TO_MUM /
                                                 params.snd_params["RESOLUTION"]).astype(int),
                                        event['Z']):
         response[params.tt_map[bisect_left(params.tt_positions_ravel, z_pos)],
                  shape[1] - y_index - 1,
                  x_index] += 1
+        if response[params.tt_map[bisect_left(params.tt_positions_ravel, z_pos)], shape[1] - y_index - 1, x_index] == 0:
+            response[params.tt_map[bisect_left(params.tt_positions_ravel, z_pos)],
+                     shape[1] - y_index - 1,
+                     x_index] += 1
     return response
