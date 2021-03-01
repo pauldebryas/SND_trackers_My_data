@@ -1,7 +1,18 @@
-# This script is meant to be used for writting the parameters of your SND@LHC detector in a more intuitive way than 
-# writing it directly in the json file. 
+# parameters.py
 
-#Each configuration ('DS5', 'SNDatLHC', ..) must be associated to a dataset. 
+# This script is meant to be used for writting the geometry parameters of your SND@LHC detector.
+# Once you have written the parameters, run "parameters.py" and it will write the parameters values in "parameters.json".
+
+#Each configuration is associated to a dataset:
+#'DS5' is PG configuration (4 planes)
+#'SNDatLHC' is SNDatLHC detector configuration (5 planes)
+
+#"END_OF_BRICK": z position of the front of the detector
+#"X_min":        x position of the lowest point of the Scifi planes
+#"X_max":        x position of the highest point of the Scifi planes
+#"Y_min":        y position of the lowest point of the Scifi planes
+#"Y_max":        y position of the highest point of the Scifi planes
+#"TT_POSITIONS": z position of the Scifi planes (front and end of each plane)
 
 import json
 
