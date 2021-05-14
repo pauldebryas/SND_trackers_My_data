@@ -36,8 +36,8 @@ plt.ioff()
 
 # Here we choose the geometry with 9 time the radiation length
 params = Parameters("SNDatLHC")  #!!!!!!!!!!!!!!!!!!!!!CHANGE THE DIMENTION !!!!!!!!!!!!!!!!
-processed_file_path_1 = os.path.expandvars("$HOME/Desktop/data/processed_data/CCDIS")
-processed_file_path_2 = os.path.expandvars("$HOME/Desktop/data/processed_data/NuEElastic")
+processed_file_path_1 = os.path.expandvars("$HOME/snd_data/processed_data/CCDIS")
+processed_file_path_2 = os.path.expandvars("$HOME/snd_data/processed_data/NuEElastic")
 
 # ------------------------------------------ LOAD THE reindex_TT_df & reindex_y_full PD.DATAFRAME --------------------------------------------------------------------------
 
