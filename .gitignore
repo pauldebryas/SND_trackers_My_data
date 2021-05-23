@@ -1,0 +1,11 @@
+# Ignore the folder with results
+results
+
+# Ignore pycache folder
+__pycache__
+
+# Ignore jupyter checkpoints folder
+.ipynb_checkpoints
+
+# Ignore numpy zipped archives
+*.npz
