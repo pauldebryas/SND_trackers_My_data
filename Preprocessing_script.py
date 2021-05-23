@@ -22,7 +22,7 @@ import argparse
 from ROOT import TH1F, TFile
 
 # -----------------------------------Reading the pickle files by chunk ---------------------------------------------------------------
-def reading_pkl_files(n_steps,processed_file_path):
+def reading_pkl_files_scifi_only(n_steps,processed_file_path):
     chunklist_TT_df = []  # list of the TT_df file of each chunk
     chunklist_y_full = [] # list of the y_full file of each chunk
 
@@ -40,8 +40,12 @@ def reading_pkl_files(n_steps,processed_file_path):
 
     for i in tqdm(range(n_steps-2)):  # tqdm: make your loops show a progress bar in terminal
         outpath = processed_file_path + "/{}".format(i+2)
-        chunklist_TT_df.append(pd.read_pickle(os.path.join(outpath, "tt_cleared.pkl"))) # add all the tt_cleared.pkl files read_pickle and add to the chunklist_TT_df list
-        chunklist_y_full.append(pd.read_pickle(os.path.join(outpath, "y_cleared.pkl"))) # add all the y_cleared.pkl files read_pickle and add to the chunklist_y_full list
+        
+        # add all the tt_cleared.pkl files read_pickle and add to the chunklist_TT_df list
+        # add all the y_cleared.pkl files read_pickle and add to the chunklist_y_full list
+        chunklist_TT_df.append(pd.read_pickle(os.path.join(outpath, "tt_cleared.pkl"))) 
+        chunklist_y_full.append(pd.read_pickle(os.path.join(outpath, "y_cleared.pkl"))) 
+        
         reindex_TT_df = pd.concat([reindex_TT_df,chunklist_TT_df[i+2]], ignore_index=True)
         reindex_y_full = pd.concat([reindex_y_full,chunklist_y_full[i+2]], ignore_index=True)
 
@@ -50,6 +54,47 @@ def reading_pkl_files(n_steps,processed_file_path):
     chunklist_y_full = []
 
     return reindex_TT_df, reindex_y_full
+
+# includes both scifi and muon processing
+def reading_pkl_files(n_steps,processed_file_path):
+    chunklist_TT_df = []  # list of the TT_df file of each chunk (scifi planes)
+    chunklist_Mu_df = []  # list of the TT_df file of each chunk (muon planes)
+    chunklist_y_full = [] # list of the y_full file of each chunk
+
+    # It is reading and analysing data by chunk instead of all at the same time (memory leak problem)
+    #First 2 
+    outpath = processed_file_path + "/{}".format(0)
+    chunklist_TT_df.append(pd.read_pickle(os.path.join(outpath, "tt_cleared.pkl")))
+    chunklist_Mu_df.append(pd.read_pickle(os.path.join(outpath, "mu_cleared.pkl")))
+    chunklist_y_full.append(pd.read_pickle(os.path.join(outpath, "y_cleared.pkl")))
+    
+    outpath = processed_file_path + "/{}".format(1)
+    chunklist_TT_df.append(pd.read_pickle(os.path.join(outpath, "tt_cleared.pkl")))
+    chunklist_Mu_df.append(pd.read_pickle(os.path.join(outpath, "mu_cleared.pkl")))
+    chunklist_y_full.append(pd.read_pickle(os.path.join(outpath, "y_cleared.pkl")))
+
+    reindex_TT_df = pd.concat([chunklist_TT_df[0],chunklist_TT_df[1]],ignore_index=True)
+    reindex_Mu_df = pd.concat([chunklist_Mu_df[0],chunklist_Mu_df[1]],ignore_index=True)
+    reindex_y_full = pd.concat([chunklist_y_full[0],chunklist_y_full[1]], ignore_index=True)
+
+    for i in tqdm(range(n_steps-2)):  # tqdm: make your loops show a progress bar in terminal
+        outpath = processed_file_path + "/{}".format(i+2)
+        
+        # add all the .pkl files read_pickle and add to the chunklist list
+        chunklist_TT_df .append(pd.read_pickle(os.path.join(outpath, "tt_cleared.pkl"))) 
+        chunklist_Mu_df .append(pd.read_pickle(os.path.join(outpath, "mu_cleared.pkl")))
+        chunklist_y_full.append(pd.read_pickle(os.path.join(outpath,  "y_cleared.pkl"))) 
+        
+        reindex_TT_df  = pd.concat([reindex_TT_df,  chunklist_TT_df [i+2]], ignore_index=True)
+        reindex_Mu_df  = pd.concat([reindex_Mu_df,  chunklist_Mu_df [i+2]], ignore_index=True)
+        reindex_y_full = pd.concat([reindex_y_full, chunklist_y_full[i+2]], ignore_index=True)
+
+    #reset empty space
+    chunklist_TT_df  = []
+    chunklist_Mu_df  = []
+    chunklist_y_full = []
+
+    return reindex_TT_df, reindex_Mu_df, reindex_y_full
 
 # ----------------------------------------------------Paramaters----------------------------------------------------------------------
 # parameter of the geometry configuration
