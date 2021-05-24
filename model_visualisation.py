@@ -4,7 +4,7 @@ import matplotlib as mpl
 from matplotlib import pylab as plt
 
 
-def plot_2d_energy_hist(X_arr, y_true, y_pred):
+def plot_2d_energy_hist(X_arr, y_true, y_pred, model_name='L2 regression'):
     fig, ax = plt.subplots(figsize=(8,6))
 
     hist = ax.hist2d(X_arr[:, 0], y_true[:, 0], 
@@ -15,7 +15,7 @@ def plot_2d_energy_hist(X_arr, y_true, y_pred):
 
     #plt.axvline(x=min_clip, c='m', alpha=0.9, label='Min clip ' + str(min_clip))
 
-    ax.plot(X_arr, y_pred, 'deeppink', marker='.', linestyle='None', alpha=0.3, label='L2 w. clipped data')
+    ax.plot(X_arr, y_pred, 'deeppink', marker='.', linestyle='None', alpha=0.3, label=model_name)
 
     cbar = fig.colorbar(hist[3], ax=ax)
     cbar.set_label('# of particles')
@@ -62,13 +62,12 @@ def plot_res_vs_energy(X_arr, y_true, y_pred):
     plt.show()
     
     
-def plot_res_hist(y_true, y_pred):
+def plot_res_hist(y_true, y_pred, hist_range=None):
     resolution = np.divide(y_pred - y_true, y_true)
     
     fig, ax = plt.subplots(figsize=(8,6))
 
-    #plt.xlim(-1, 1)
-    ax.hist(resolution.reshape(-1), bins = 100)
+    ax.hist(resolution.reshape(-1), bins=100, range=hist_range)
     
     plt.xlabel(r'$(E_{reco} - E_{true})~/~E_{true}$')
     plt.ylabel('# particles')
