@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
+from sklearn.model_selection import train_test_split
 
 from tqdm import tqdm
 from process_pickle import read_pickled_df
@@ -115,3 +116,33 @@ def load_dataset(path, mode='sum'):
         full_y = full_dts['y']
         
     return full_X, full_y
+
+
+def split_dataset(full_X, full_y, TRAIN_SIZE_RATIO = 0.9, RANDOM_SEED = 1543):
+    data_size = full_X.shape[0]
+
+    all_idx = np.arange(0, data_size)
+
+    train_idx, test_idx, _, _ = train_test_split(all_idx, all_idx, 
+                                                 train_size=TRAIN_SIZE_RATIO, 
+                                                 random_state=RANDOM_SEED)
+
+    train_size = len(train_idx)
+    test_size  = len(test_idx)
+
+    X_train = full_X[train_idx]
+    y_train = full_y[train_idx]
+
+    X_test = full_X[test_idx]
+    y_test = full_y[test_idx]
+    
+    return X_train, y_train, X_test, y_test
+
+
+def clip_dataset(X_arr, y_arr, min_clip):
+    clip_idx = np.where(X_arr > min_clip)[0]
+
+    X_arr_clip = X_arr[clip_idx]#.reshape(-1, 1)
+    y_arr_clip = y_arr[clip_idx]#.reshape(-1, 1)
+
+    return X_arr_clip, y_arr_clip
