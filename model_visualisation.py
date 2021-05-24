@@ -24,9 +24,18 @@ def plot_2d_energy_hist(X_arr, y_true, y_pred, model_name='L2 regression'):
     plt.show()
     
     
-def plot_res_vs_energy(X_arr, y_true, y_pred):
-    resolution = np.divide(y_pred - y_true, y_true)
+def comp_resolution(y_true, y_pred):
+    y_pred_flat = y_pred.reshape(-1)
+    y_true_flat = y_true.reshape(-1)
+   
+    resolution = np.divide(y_pred_flat - y_true_flat, y_true_flat)
+
+    return resolution
     
+    
+def plot_res_vs_energy(X_arr, y_true, y_pred):
+    resolution = comp_resolution(y_true, y_pred)
+        
     fig, axs = plt.subplots(2,2, figsize=(12,8))
 
     for i in range(2):
@@ -40,7 +49,7 @@ def plot_res_vs_energy(X_arr, y_true, y_pred):
             energy = y_true[:, 0]
             xlabel = r'$E_{true}$'
         
-        hist = axs[i][0].hist2d(energy, resolution[:, 0], 
+        hist = axs[i][0].hist2d(energy, resolution, 
                           bins=100, norm=mpl.colors.LogNorm(), vmax=150)
 
         axs[i][0].set_ylim(-2, None)
@@ -50,7 +59,7 @@ def plot_res_vs_energy(X_arr, y_true, y_pred):
         axs[i][0].grid()
 
 
-        hist = axs[i][1].hist2d(energy, resolution[:, 0], 
+        hist = axs[i][1].hist2d(energy, resolution, 
                           bins=100, norm=mpl.colors.LogNorm(), vmax=150)
 
         axs[i][1].set_ylim(-2, 20)
@@ -63,11 +72,11 @@ def plot_res_vs_energy(X_arr, y_true, y_pred):
     
     
 def plot_res_hist(y_true, y_pred, hist_range=None):
-    resolution = np.divide(y_pred - y_true, y_true)
+    resolution = comp_resolution(y_true, y_pred)
     
     fig, ax = plt.subplots(figsize=(8,6))
 
-    ax.hist(resolution.reshape(-1), bins=100, range=hist_range)
+    ax.hist(resolution, bins=100, range=hist_range)
     
     plt.xlabel(r'$(E_{reco} - E_{true})~/~E_{true}$')
     plt.ylabel('# particles')
