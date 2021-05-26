@@ -6,7 +6,7 @@ import numpy as np
 from bisect import bisect_left
 from utils import CM_TO_MUM
 from coord_conv import CoordConv
-
+import itertools
 
 class Flatten(nn.Module):
     def forward(self, input):
@@ -94,7 +94,7 @@ class MyDataset(Dataset):
         return len(self.indices)
 
 
-def digitize_signal(event, params, filters=1):
+def digitize_signal_scifi(event, params, filters=1):
     """
     Convert pandas DataFrame to image
     :param event: Pandas DataFrame line
@@ -102,27 +102,72 @@ def digitize_signal(event, params, filters=1):
     :param filters: Number of TargetTrackers in the simulation
     :return: numpy tensor of shape (n_filters, H, W).
     """
-    x_half = (params.snd_params[params.configuration]['X_max']-params.snd_params[params.configuration]['X_min'])/2
-    y_half = (params.snd_params[params.configuration]['Y_max']-params.snd_params[params.configuration]['Y_min'])/2
+    x_half = (params.snd_params[params.configuration]['SciFi_tracker']['X_max']-params.snd_params[params.configuration]['SciFi_tracker']['X_min'])/2
+    y_half = (params.snd_params[params.configuration]['SciFi_tracker']['Y_max']-params.snd_params[params.configuration]['SciFi_tracker']['Y_min'])/2
     shape = (filters,
              int(np.ceil(y_half * 2 * CM_TO_MUM /
-                         params.snd_params["RESOLUTION"])),
+                         params.snd_params[params.configuration]['SciFi_tracker']["RESOLUTION"])),
              int(np.ceil(x_half * 2 * CM_TO_MUM /
-                         params.snd_params["RESOLUTION"])))
+                         params.snd_params[params.configuration]['SciFi_tracker']["RESOLUTION"])))
     response = np.zeros(shape)
     
     for x_index, y_index, z_pos in zip(np.floor((event['X'] + x_half) * CM_TO_MUM /
-                                                params.snd_params["RESOLUTION"]).astype(int),
+                                                params.snd_params[params.configuration]['SciFi_tracker']["RESOLUTION"]).astype(int),
                                        np.floor((event['Y'] + y_half) * CM_TO_MUM /
-                                                params.snd_params["RESOLUTION"]).astype(int),
+                                                params.snd_params[params.configuration]['SciFi_tracker']["RESOLUTION"]).astype(int),
                                        event['Z']):
-        response[params.tt_map[bisect_left(params.tt_positions_ravel, z_pos)],
-                 shape[1] - y_index - 1,
-                 x_index] += 1
-        if response[params.tt_map[bisect_left(params.tt_positions_ravel, z_pos)], shape[1] - y_index - 1, x_index] == 0:
-            response[params.tt_map[bisect_left(params.tt_positions_ravel, z_pos)],
-                     shape[1] - y_index - 1,
-                     x_index] += 1
+        response[params.tt_map[bisect_left(params.scifi_tt_positions, z_pos)], y_index,x_index] += 1
+        if response[params.tt_map[bisect_left(params.scifi_tt_positions, z_pos)], y_index, x_index] == 0:
+            response[params.tt_map[bisect_left(params.scifi_tt_positions, z_pos)], y_index, x_index] += 1
+    return response
+
+def digitize_signal_downstream_mu(event, params, filters=1):
+    """
+    Convert pandas DataFrame to image
+    :param event: Pandas DataFrame line
+    :param params: Detector configuration
+    :param filters: Number of TargetTrackers in the simulation
+    :return: numpy tensor of shape (n_filters, H, W).
+    """
+    x_half = (params.snd_params[params.configuration]['Mu_tracker_downstream']['X_max']-params.snd_params[params.configuration]['Mu_tracker_downstream']['X_min'])/2
+    y_half = (params.snd_params[params.configuration]['Mu_tracker_downstream']['Y_max']-params.snd_params[params.configuration]['Mu_tracker_downstream']['Y_min'])/2
+    shape = (filters,
+             int(np.ceil(y_half * 2 * CM_TO_MUM /
+                         params.snd_params[params.configuration]['Mu_tracker_downstream']["RESOLUTION"])),
+             int(np.ceil(x_half * 2 * CM_TO_MUM /
+                         params.snd_params[params.configuration]['Mu_tracker_downstream']["RESOLUTION"])))
+    response = np.zeros(shape)
+
+    for x_index, y_index, z_pos in zip(np.floor((event['X'] + x_half) * CM_TO_MUM /
+                                                params.snd_params[params.configuration]['Mu_tracker_downstream']["RESOLUTION"]).astype(int),
+                                       np.floor((event['Y'] + y_half) * CM_TO_MUM /
+                                                params.snd_params[params.configuration]['Mu_tracker_downstream']["RESOLUTION"]).astype(int),
+                                       event['Z']):
+        if (z_pos >  params.mu_downstream_tt_positions[0]) and (z_pos <  params.mu_downstream_tt_positions[-1]):
+            response[params.tt_map[bisect_left(params.mu_downstream_tt_positions, z_pos)], y_index, x_index] = 1
+
+    return response
+
+def digitize_signal_upstream_mu(event, params, filters=1):
+    """
+    Convert pandas DataFrame to image
+    :param event: Pandas DataFrame line
+    :param params: Detector configuration
+    :param filters: Number of TargetTrackers in the simulation
+    :return: numpy tensor of shape (n_filters, H, W).
+    """
+    x_half = (params.snd_params[params.configuration]['Mu_tracker_upstream']['X_max']-params.snd_params[params.configuration]['Mu_tracker_upstream']['X_min'])/2
+    y_half = (params.snd_params[params.configuration]['Mu_tracker_upstream']['Y_max']-params.snd_params[params.configuration]['Mu_tracker_upstream']['Y_min'])/2
+    shape = (filters,
+             int(np.ceil(y_half * 2 * CM_TO_MUM / params.snd_params[params.configuration]['Mu_tracker_upstream']["RESOLUTION"])),
+             1)
+    response = np.zeros(shape)
+
+    for y_index, z_pos in zip(np.floor((event['Y'] + y_half) * CM_TO_MUM / params.snd_params[params.configuration]['Mu_tracker_upstream']["RESOLUTION"]).astype(int),
+                                       event['Z']):
+        if (z_pos >  params.mu_upstream_tt_positions[0]) and (z_pos <  params.mu_upstream_tt_positions[-1]):
+            response[params.tt_map[bisect_left(params.mu_upstream_tt_positions, z_pos)], y_index, 0] = 1
+
     return response
 
 def digitize_signal_1d(event, params, filters=2):
