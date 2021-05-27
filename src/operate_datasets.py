@@ -4,7 +4,7 @@ import os
 from sklearn.model_selection import train_test_split
 
 from tqdm import tqdm
-from process_pickle import read_pickled_df
+from src.process_pickle import read_pickled_df
 
 from net import digitize_signal_scifi
 from net import digitize_signal_upstream_mu
