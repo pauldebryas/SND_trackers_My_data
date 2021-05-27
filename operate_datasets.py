@@ -57,7 +57,7 @@ def make_dataset(scifi_arr, mu_arr, en_arr,
     
     for i in tqdm(range(data_size)):
         shower_stat = None
-
+        
         scifi_resp   = digitize_signal_scifi        (scifi_arr.iloc[i],
                                                      detector_params, filt_num['scifi'])
         up_mu_resp   = digitize_signal_upstream_mu  (mu_arr.iloc[i], 
@@ -91,8 +91,9 @@ def make_dataset(scifi_arr, mu_arr, en_arr,
             shower_stat = scifi_resp.sum() + up_mu_resp.sum() + down_mu_resp.sum()
             
         elif sgn_dgt_mode == SGN_DGT_MODES['true']:
-            shower_stat = np.array([scifi_arr.iloc[i].shape[0], mu_arr.iloc[i].shape[0]])
-            
+            shower_stat = np.array([scifi_arr['X'][i].shape[0], 
+                                    mu_arr   ['X'][i].shape[0]])
+                      
         #elif sgn_dgt_mode == SGN_DGT_MODES['plane']:
         #    # memory troubles!
         #    # this is not well written
@@ -116,7 +117,7 @@ def save_dataset(full_X, full_y, fname):
 
 
 def create_dataset(mode, detector_params, paths_dict, 
-                   events_per_file, files_num, used_data_coef = 1.0):
+                   events_per_file, files_num, used_data_coef=1.0):
     scifi_arr, mu_arr, en_arr = read_pickled_df(detector_params, paths_dict, 
                                                 events_per_file, files_num)
 
