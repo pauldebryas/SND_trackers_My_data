@@ -2,25 +2,33 @@ import numpy as np
 import pandas as pd
 import os
 
+
+PART_TYPE_ARR = ['nuel', 'numu', 'nutau']
+
+
 def read_chunklist(proc_file_path, step_size, file_size):
     # step_size = size of a chunk
     # file_size = size of the CCDIS BigFile
 
     n_steps = int(file_size / step_size) # number of chunks
 
-    chunklist_TT_df  = [] # list of the TT_df file of each chunk
-    chunklist_y_full = [] # list of the y_full file of each chunk
+    chunklist_scifi = [] # list of the TT_df file of each chunk
+    chunklist_muons = [] # list of the TT_df file of each chunk
+    chunklist_energ = [] # list of the y_full file of each chunk
     
     # first 2 
     for i in range(2):
         outpath = proc_file_path + "/{}".format(i)
-        chunklist_TT_df .append(pd.read_pickle(os.path.join(outpath, "tt_cleared.pkl")))
-        chunklist_y_full.append(pd.read_pickle(os.path.join(outpath, "y_cleared.pkl")))
+        chunklist_scifi.append(pd.read_pickle(os.path.join(outpath, "tt_cleared.pkl")))
+        chunklist_muons.append(pd.read_pickle(os.path.join(outpath, "mu_cleared.pkl")))
+        chunklist_energ.append(pd.read_pickle(os.path.join(outpath,  "y_cleared.pkl")))
 
-    reindex_TT_df  = pd.concat([chunklist_TT_df[0],
-                                chunklist_TT_df[1]],  ignore_index=True)
-    reindex_y_full = pd.concat([chunklist_y_full[0],
-                                chunklist_y_full[1]], ignore_index=True)
+    scifi_df = pd.concat([chunklist_scifi[0],
+                          chunklist_scifi[1]], ignore_index=True)
+    muons_df = pd.concat([chunklist_muons[0],
+                          chunklist_muons[1]], ignore_index=True)
+    energ_df = pd.concat([chunklist_energ[0],
+                          chunklist_energ[1]], ignore_index=True)
 
     print("Before Reduction (file " + proc_file_path + "):")
 
@@ -29,98 +37,108 @@ def read_chunklist(proc_file_path, step_size, file_size):
         outpath = proc_file_path + "/{}".format(i+2)
         
         # add all the tt_cleared.pkl files read_pickle and add to the chunklist_TT_df list
-        chunklist_TT_df.append(pd.read_pickle(os.path.join(outpath, "tt_cleared.pkl")))
+        chunklist_scifi.append(pd.read_pickle(os.path.join(outpath, "tt_cleared.pkl")))
         
+        # add all the tt_cleared.pkl files read_pickle and add to the chunklist_TT_df list
+        chunklist_muons.append(pd.read_pickle(os.path.join(outpath, "mu_cleared.pkl")))
+
         # add all the y_cleared.pkl files read_pickle and add to the chunklist_y_full list
-        chunklist_y_full.append(pd.read_pickle(os.path.join(outpath, "y_cleared.pkl")))
+        chunklist_energ.append(pd.read_pickle(os.path.join(outpath, "y_cleared.pkl")))
         
-        reindex_TT_df  = pd.concat([reindex_TT_df,  
-                                    chunklist_TT_df[i+2]], ignore_index=True)
-        reindex_y_full = pd.concat([reindex_y_full, 
-                                    chunklist_y_full[i+2]], ignore_index=True)
+        scifi_df = pd.concat([scifi_df, chunklist_scifi[i+2]], ignore_index=True)
+        muons_df = pd.concat([muons_df, chunklist_muons[i+2]], ignore_index=True)
+        energ_df = pd.concat([energ_df, chunklist_energ[i+2]], ignore_index=True)
     
-    print("  TT_df  inelastic: " + str(len(reindex_TT_df)))
-    print("  y_full inelastic: " + str(len(reindex_y_full)))
+    print("  TT_df  : " + str(len(scifi_df)))
+    print("  MU_df  : " + str(len(muons_df)))
+    print("  y_full : " + str(len(energ_df)))
 
-    return reindex_TT_df, reindex_y_full
+    return scifi_df, muons_df, energ_df
 
 
-def load_dataframes(params, path_nuel, path_numu, path_nutau):
-    
-    # Here we choose the geometry with 9 time the radiation length
-    proc_path_nuel  = os.path.expandvars(path_nuel)
-    proc_path_numu  = os.path.expandvars(path_numu)
-    proc_path_nutau = os.path.expandvars(path_nutau)
+def load_dataframes(params, paths_dict, step_size, files_num):
+    full_paths = dict()
+
+    for part_type in PART_TYPE_ARR:
+        full_paths[part_type] = os.path.expandvars(paths_dict[part_type])
     
     # --- LOAD THE reindex_TT_df & reindex_y_full PD.DATAFRAME ---
 
     # It is reading and analysing data by chunk instead of all at the time (memory leak problem)
     print("\nReading the tt_cleared.pkl & y_cleared.pkl files by chunk of CCDIS and NueEElastic")
     
-    reidx_TT_df  = dict()
-    reidx_y_full = dict()
+    scifi_arr = dict()
+    mu_arr    = dict()
+    en_arr    = dict()
     
-    step_size = 1000                   # events in one file
-    files_num = 10                     # number of files
+    # step_size = events in one file
+    # files_num = number of files
     file_size = files_num * step_size  # total number of events
     
-    reidx_TT_df['nuel'],  reidx_y_full['nuel']  = read_chunklist(proc_path_nuel,  step_size, file_size)
-    reidx_TT_df['numu'],  reidx_y_full['numu']  = read_chunklist(proc_path_numu,  step_size, file_size)
-    reidx_TT_df['nutau'], reidx_y_full['nutau'] = read_chunklist(proc_path_nutau, step_size, file_size)
     
-    return reidx_TT_df, reidx_y_full
+    for part_type in PART_TYPE_ARR:
+        scifi_arr[part_type], mu_arr[part_type], en_arr[part_type] = read_chunklist(full_paths[part_type], 
+                                                                                    step_size, file_size)
+        
+    return scifi_arr, mu_arr, en_arr
 
+# selecting events to ensure equal number of events for all particle types
+def balance_events_num(scifi_arr, mu_arr, en_arr):
+    event_limit = min(len(en_arr['nuel']),
+                      len(en_arr['numu']),
+                      len(en_arr['nutau']))
 
-def balance_events_num(reindex_TT_df, reindex_y_full):
-    # Selecting events to ensure equal number of elastic and inelastic events
-    event_limit = min(len(reindex_y_full['nuel']),
-                      len(reindex_y_full['numu']),
-                      len(reindex_y_full['nutau']))
-
-    for part_type in ['nuel', 'numu', 'nutau']:
-        remove = int(len(reindex_TT_df[part_type]) - event_limit) + 1
-        reindex_TT_df [part_type] = reindex_TT_df [part_type][:-remove]
-        reindex_y_full[part_type] = reindex_y_full[part_type][:-remove]
+    for part_type in ['nuel', 'numu', 'nutau']:        
+        scifi_arr[part_type] = scifi_arr[part_type][:event_limit]
+        mu_arr   [part_type] = mu_arr   [part_type][:event_limit]
+        en_arr   [part_type] = en_arr   [part_type][:event_limit]
     
-    return reindex_TT_df, reindex_y_full
+    return scifi_arr, mu_arr, en_arr
 
 
-def merge_events_arrays(reindex_TT_df, reindex_y_full):
+def merge_events_arrays(scifi_arr, mu_arr, en_arr):
     # Merging CCDIS and NueEElastic in a single array
-    combined_TT_df  = pd.concat([reindex_TT_df ['nuel'], 
-                                 reindex_TT_df ['numu'],
-                                 reindex_TT_df ['nutau']], ignore_index=True, sort=False)
-    combined_y_full = pd.concat([reindex_y_full['nuel'], 
-                                 reindex_y_full['numu'],
-                                 reindex_y_full['nutau']], ignore_index=True, sort=False)
+    combined_scifi_arr  = pd.concat([scifi_arr ['nuel'], 
+                                     scifi_arr ['numu'],
+                                     scifi_arr ['nutau']], ignore_index=True, sort=False)
+
+    combined_mu_arr  = pd.concat([mu_arr ['nuel'], 
+                                  mu_arr ['numu'],
+                                  mu_arr ['nutau']], ignore_index=True, sort=False)
+
+    combined_en_arr  = pd.concat([en_arr ['nuel'], 
+                                  en_arr ['numu'],
+                                  en_arr ['nutau']], ignore_index=True, sort=False)
     
     print("After Reduction  :\n")
 
     for part_type in ['nuel', 'numu', 'nutau']:
         print("Particle type: " + part_type)
-        print("  TT_df : " + str(len(reindex_TT_df [part_type])))
-        print("  y_full: " + str(len(reindex_y_full[part_type])))
+        print("  scifi_arr : " + str(len(scifi_arr[part_type])))
+        print("  mu_arr    : " + str(len(mu_arr[part_type])))
+        print("  en_arr    : " + str(len(en_arr[part_type])))
 
     print()
-    print("Combined TT_df : " + str(len(combined_TT_df)))
-    print("Combined y_full: " + str(len(combined_y_full)))
-    
-    return combined_TT_df, combined_y_full
+    print("combined_scifi_arr : " + str(len(combined_scifi_arr)))
+    print("combined_mu_arr: " + str(len(combined_mu_arr)))
+    print("combined_en_arr: " + str(len(combined_en_arr)))
+
+    return combined_scifi_arr, combined_mu_arr, combined_en_arr
 
 
-def normalise_target_energy(reindex_y_full, norm = 1. / 4000):
+def normalise_target_energy(en_arr, norm = 1. / 4000):
     # True value of NRJ for each true Nue event
-    reindex_y_full[["E"]] *= norm
-    return reindex_y_full
+    en_arr[["E"]] *= norm
+    return en_arr
 
 
-def read_pickled_df(detector_params, path_nuel, path_numu, path_nutau):
-    reidx_TT_df, reidx_y_full = load_dataframes(detector_params, path_nuel, path_numu, path_nutau)
+def read_pickled_df(detector_params, paths_dict, step_size, file_size):
+    scifi_arr, mu_arr, en_arr = load_dataframes(detector_params, paths_dict, step_size, file_size)
     
     # not required
-    # reidx_TT_df, reidx_y_full = balance_events_num(reidx_TT_df, reidx_y_full)
-    merged_TT_df, merged_y_full = merge_events_arrays(reidx_TT_df, reidx_y_full)
+    # scifi_arr, mu_arr, en_arr = balance_events_num(scifi_arr, mu_arr, en_arr)
+    scifi_arr, mu_arr, en_arr = merge_events_arrays(scifi_arr, mu_arr, en_arr)
     
-    merged_y_full = normalise_target_energy(merged_y_full)
+    en_arr = normalise_target_energy(en_arr)
     
-    return merged_TT_df, merged_y_full
+    return scifi_arr, mu_arr, en_arr

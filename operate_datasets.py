@@ -5,10 +5,13 @@ from sklearn.model_selection import train_test_split
 
 from tqdm import tqdm
 from process_pickle import read_pickled_df
-from net import digitize_signal, digitize_signal_1d
+
+from net import digitize_signal_scifi
+from net import digitize_signal_upstream_mu
+from net import digitize_signal_downstream_mu
 
 
-SGN_DGT_MODE_NAMES = ['sum', 'longitudal', 'projection', 'plane']
+SGN_DGT_MODE_NAMES = ['sum', 'longitudal', 'projection', 'true'] # 'plane'
 SGN_DGT_MODES = dict(zip(SGN_DGT_MODE_NAMES, 
                          np.arange(len(SGN_DGT_MODE_NAMES))))
 # 0d - sum of all vals = 1 number, for baseline
@@ -17,51 +20,84 @@ SGN_DGT_MODES = dict(zip(SGN_DGT_MODE_NAMES,
 # 3d - (x,y) variation, for conv testing
 
 
-def make_dataset(pickled_TT_df, pickled_y_df, detector_params,
-                 used_data_coef  = 1., 
-                 sgn_dgt_mode    = SGN_DGT_MODES['sum']):
+def detector_planes_num(det_params):
+    nb_plane = dict()
+    det_conf = det_params.snd_params[det_params.configuration]
 
-    assert len(pickled_TT_df) == len(pickled_y_df)
+    nb_plane['scifi']   = len(det_conf['SciFi_tracker']        ['TT_POSITIONS'])
+    nb_plane['up_mu']   = len(det_conf['Mu_tracker_upstream']  ['TT_POSITIONS'])
+    nb_plane['down_mu'] = len(det_conf['Mu_tracker_downstream']['TT_POSITIONS'])
+
+    return nb_plane
+    
+
+def make_dataset(scifi_arr, mu_arr, en_arr, 
+                 detector_params,
+                 used_data_coef = 1., 
+                 sgn_dgt_mode   = SGN_DGT_MODES['sum']):
+    # check arrays validity
+    assert len(scifi_arr) == len(mu_arr)
+    assert len(scifi_arr) == len(en_arr)
     assert used_data_coef > 0.
     assert used_data_coef <= 1.
 
-    full_data_size = len(pickled_TT_df)
+    full_data_size = len(scifi_arr)
 
     # select subset of available data to make debug training faster
     data_size = int(used_data_coef * full_data_size)
     
     # normalised energies array cast to numpy and subset taken
-    y_arr = pickled_y_df["E"].to_numpy()[:data_size]
+    y_arr = en_arr["E"].to_numpy()[:data_size]
 
-    # create simplistic dataset (sum pixels in (x,y) representation)
+    # create a simplistic dataset
     X_arr = []
-
-    nb_of_plane = len(detector_params.snd_params[detector_params.configuration]["TT_POSITIONS"])
+    
+    # get number of planes for each detector part
+    filt_num = detector_planes_num(detector_params)
     
     for i in tqdm(range(data_size)):
-        # xy variation
-        
         shower_stat = None
 
-        xy_plane = digitize_signal(pickled_TT_df.iloc[i], detector_params, filters = nb_of_plane)
+        scifi_resp   = digitize_signal_scifi        (scifi_arr.iloc[i],
+                                                     detector_params, filt_num['scifi'])
+        up_mu_resp   = digitize_signal_upstream_mu  (mu_arr.iloc[i], 
+                                                     detector_params, filt_num['up_mu'])
+        down_mu_resp = digitize_signal_downstream_mu(mu_arr.iloc[i], 
+                                                     detector_params, filt_num['down_mu'])
         
-        if   sgn_dgt_mode == SGN_DGT_MODES['plane']:
-            # memory troubles!
-            # this is not well written
-            # be very carefull when using this
-            shower_stat = xy_plane
-        
-        elif sgn_dgt_mode == SGN_DGT_MODES['projection']:
-            xz = xy_plane.sum(axis=1)
-            yz = xy_plane.sum(axis=2)
+        if sgn_dgt_mode == SGN_DGT_MODES['projection']:
+            print(scifi_resp.shape, up_mu_resp.shape, down_mu_resp.shape)
             
-            shower_stat = np.concatenate((xz, yz), axis=1)
+            scifi_x  , scifi_y   = scifi_resp  .sum(axis=1), scifi_resp  .sum(axis=2)
+            up_mu_x  , up_mu_y   = up_mu_resp  .sum(axis=1), scifi_resp  .sum(axis=2)
+            doen_mu_x, down_mu_y = down_mu_resp.sum(axis=1), down_mu_resp.sum(axis=2)
+
+            print(scifi_x.shape, scifi_y.shape)
+            print(up_mu_x.shape, up_mu_y.shape)
+            
+            x_vec = np.concatenate((scifi_x, up_mu_x, doen_mu_x))
+            y_vec = np.concatenate((scifi_y, up_mu_y, doen_mu_y))
+
+            shower_stat = np.concatenate((x_vec, y_vec), axis=1)
 
         elif sgn_dgt_mode == SGN_DGT_MODES['longitudal']:
-            shower_stat = xy_plane.sum(axis=(1,2))
+            num1 = scifi_resp.sum(axis=(1,2))
+            num2 = up_mu_resp.sum(axis=(1,2))
+            num3 = down_mu_resp.sum(axis=(1,2))
 
+            shower_stat = np.concatenate((num1, num2, num3))
+            
         elif sgn_dgt_mode == SGN_DGT_MODES['sum']:
-            shower_stat = xy_plane.sum()
+            shower_stat = scifi_resp.sum() + up_mu_resp.sum() + down_mu_resp.sum()
+            
+        elif sgn_dgt_mode == SGN_DGT_MODES['true']:
+            shower_stat = np.array([scifi_arr.iloc[i].shape[0], mu_arr.iloc[i].shape[0]])
+            
+        #elif sgn_dgt_mode == SGN_DGT_MODES['plane']:
+        #    # memory troubles!
+        #    # this is not well written
+        #    # be very carefull when using this
+        #    shower_stat = xy_plane
         
         else:
             raise Exception("Unknown signal digitization mode")
@@ -79,21 +115,22 @@ def save_dataset(full_X, full_y, fname):
     return
 
 
-def create_dataset(mode, detector_params, path_nuel, path_numu, path_nutau,
-                   used_data_coef = 1.0):
-    
-    merged_TT_df, merged_y_full = read_pickled_df(detector_params, path_nuel, path_numu, path_nutau)
+def create_dataset(mode, detector_params, paths_dict, 
+                   events_per_file, files_num, used_data_coef = 1.0):
+    scifi_arr, mu_arr, en_arr = read_pickled_df(detector_params, paths_dict, 
+                                                events_per_file, files_num)
 
     assert mode in SGN_DGT_MODE_NAMES
     print(mode)
         
     dataset_fname = 'new_dataset_' + mode + '.npz'
 
-    full_X, full_y = make_dataset(merged_TT_df, merged_y_full, detector_params,
-                                  used_data_coef = used_data_coef,
-                                  sgn_dgt_mode = SGN_DGT_MODES[mode])
+    X_arr, y_arr = make_dataset(scifi_arr, mu_arr, en_arr, 
+                                detector_params,
+                                used_data_coef,
+                                SGN_DGT_MODES[mode])
 
-    save_dataset(full_X, full_y, dataset_fname)
+    save_dataset(X_arr, y_arr, dataset_fname)
         
     return
 
@@ -104,18 +141,18 @@ def load_dataset(path, mode='sum'):
     dataset_fname = os.path.join(os.path.expanduser(path), 
                                  'new_dataset_' + mode + '.npz')
 
-    full_X, full_y = None, None
+    X_arr, y_arr = None, None
 
     # load if exists
     full_dts = None
 
     with open(dataset_fname, 'rb') as file:
-        full_dts = np.load(file)#, allow_pickle=True)
+        packed_arr = np.load(file)#, allow_pickle=True)
 
-        full_X = full_dts['x']
-        full_y = full_dts['y']
+        X_arr = packed_arr['x']
+        y_arr = packed_arr['y']
         
-    return full_X, full_y
+    return X_arr, y_arr
 
 
 def split_dataset(full_X, full_y, TRAIN_SIZE_RATIO = 0.9, RANDOM_SEED = 1543):
