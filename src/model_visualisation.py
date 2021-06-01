@@ -5,21 +5,14 @@ import matplotlib as mpl
 from matplotlib import pylab as plt
 import scipy.stats as stats
 
+from src.model_evaluation import comp_resolution
+
 
 IMG_DIR    = 'results/img/'
 IMG_SHOW   = True
 IMG_FORMAT = 'png'
 IMG_DPI    = 300
 
-
-# todo: move to a more sensible module
-def comp_resolution(y_true, y_pred):
-    y_pred_flat = y_pred.reshape(-1)
-    y_true_flat = y_true.reshape(-1)
-   
-    resolution = np.divide(y_pred_flat - y_true_flat, y_true_flat)
-
-    return resolution
 
 
 # decorator for saving the figures from plotting functions 
