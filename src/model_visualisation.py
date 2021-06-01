@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 import matplotlib as mpl
@@ -5,6 +6,52 @@ from matplotlib import pylab as plt
 import scipy.stats as stats
 
 
+IMG_DIR    = 'results/img/'
+IMG_SHOW   = True
+IMG_FORMAT = 'png'
+IMG_DPI    = 300
+
+
+# todo: move to a more sensible module
+def comp_resolution(y_true, y_pred):
+    y_pred_flat = y_pred.reshape(-1)
+    y_true_flat = y_true.reshape(-1)
+   
+    resolution = np.divide(y_pred_flat - y_true_flat, y_true_flat)
+
+    return resolution
+
+
+# decorator for saving the figures from plotting functions 
+def savefig_deco(plot_func, folder_path=IMG_DIR, dpi=IMG_DPI, format=IMG_FORMAT, show=IMG_SHOW):
+    
+    def wrapper(*args, **kwargs):
+        # get the file postfix (if it exists) from the arguments
+        if 'save_file_prefix' in kwargs.keys():
+            save_file_prefix =  kwargs['save_file_prefix']
+            kwargs.pop('save_file_prefix', None)
+
+        # check if folder exists and create if it does not
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+
+        # form the filename
+        save_path = os.path.join(folder_path, save_file_prefix)
+        save_path = save_path + '_' + plot_func.__name__
+        save_path = save_path + '.' + IMG_FORMAT
+
+        # plot + save + show the image
+        fig = plot_func(*args, **kwargs)
+        plt.savefig(save_path, dpi=dpi, format=format)
+        if show:
+            plt.show()
+            
+        return #fig
+   
+    return wrapper
+    
+
+@savefig_deco
 def plot_2d_energy_hist(X_arr, y_true, y_pred, model_name):
     fig, ax = plt.subplots(figsize=(8,6))
 
@@ -22,9 +69,11 @@ def plot_2d_energy_hist(X_arr, y_true, y_pred, model_name):
     cbar.set_label('# of particles')
 
     plt.legend(loc='lower right')
-    plt.show()
+                
+    return fig
     
     
+@savefig_deco
 def plot_2d_energy_hist_clip(X_full, y_true, y_pred, clip, model_name):
     fig, ax = plt.subplots(figsize=(8,6))
 
@@ -44,19 +93,10 @@ def plot_2d_energy_hist_clip(X_full, y_true, y_pred, clip, model_name):
     cbar.set_label('# of particles')
 
     plt.legend(loc='lower right')
-    plt.show()
-
+    return fig
+        
     
-
-def comp_resolution(y_true, y_pred):
-    y_pred_flat = y_pred.reshape(-1)
-    y_true_flat = y_true.reshape(-1)
-   
-    resolution = np.divide(y_pred_flat - y_true_flat, y_true_flat)
-
-    return resolution
-    
-    
+@savefig_deco
 def plot_res_vs_energy(X_arr, y_true, y_pred, bins=100, vmax=150):
     resolution = comp_resolution(y_true, y_pred)
         
@@ -89,9 +129,10 @@ def plot_res_vs_energy(X_arr, y_true, y_pred, bins=100, vmax=150):
         
     # todo: colorbar
     
-    plt.show()
+    return fig
     
     
+@savefig_deco
 def plot_res_hist(y_true, y_pred, hist_range=None, bins=100, density=False):
     resolution = comp_resolution(y_true, y_pred)
     
@@ -102,9 +143,10 @@ def plot_res_hist(y_true, y_pred, hist_range=None, bins=100, density=False):
     plt.xlabel(r'$(E_{reco} - E_{true})~/~E_{true}$')
     plt.ylabel('# particles')
 
-    plt.show()
+    return fig
     
 
+@savefig_deco
 def plot_res_hist_fit(y_true, y_pred, hist_range=None, bins=100):
     resolution = comp_resolution(y_true, y_pred)
     
@@ -127,4 +169,4 @@ def plot_res_hist_fit(y_true, y_pred, hist_range=None, bins=100):
     plt.ylabel('# particles')
 
     plt.legend()
-    plt.show()
+    return fig
