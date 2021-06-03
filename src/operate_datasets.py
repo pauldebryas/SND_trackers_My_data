@@ -38,7 +38,7 @@ def make_dataset(scifi_arr, mu_arr, en_arr,
     # check arrays validity
     assert len(scifi_arr) == len(mu_arr)
     assert len(scifi_arr) == len(en_arr)
-    assert used_data_coef > 0.
+    assert used_data_coef >  0.
     assert used_data_coef <= 1.
 
     full_data_size = len(scifi_arr)
@@ -65,24 +65,16 @@ def make_dataset(scifi_arr, mu_arr, en_arr,
         down_mu_resp = digitize_signal_downstream_mu(mu_arr.iloc[i], 
                                                      detector_params, filt_num['down_mu'])
         
-        if sgn_dgt_mode == SGN_DGT_MODES['projection']:
-            print(scifi_resp.shape, up_mu_resp.shape, down_mu_resp.shape)
+        if sgn_dgt_mode == SGN_DGT_MODES['projection']:            
+            scifi_x, scifi_y     = scifi_resp  .sum(axis=1), scifi_resp.sum(axis=2)
+            up_mu                = up_mu_resp  .sum(axis=2)
+            down_mu_x, down_mu_y = down_mu_resp.sum(axis=1), down_mu_resp.sum(axis=2)
             
-            scifi_x  , scifi_y   = scifi_resp  .sum(axis=1), scifi_resp  .sum(axis=2)
-            up_mu_x  , up_mu_y   = up_mu_resp  .sum(axis=1), scifi_resp  .sum(axis=2)
-            doen_mu_x, down_mu_y = down_mu_resp.sum(axis=1), down_mu_resp.sum(axis=2)
-
-            print(scifi_x.shape, scifi_y.shape)
-            print(up_mu_x.shape, up_mu_y.shape)
-            
-            x_vec = np.concatenate((scifi_x, up_mu_x, doen_mu_x))
-            y_vec = np.concatenate((scifi_y, up_mu_y, doen_mu_y))
-
-            shower_stat = np.concatenate((x_vec, y_vec), axis=1)
+            shower_stat = np.array([scifi_x, scifi_y, up_mu, down_mu_x, down_mu_y])
 
         elif sgn_dgt_mode == SGN_DGT_MODES['longitudal']:
-            num1 = scifi_resp.sum(axis=(1,2))
-            num2 = up_mu_resp.sum(axis=(1,2))
+            num1 = scifi_resp  .sum(axis=(1,2))
+            num2 = up_mu_resp  .sum(axis=(1,2))
             num3 = down_mu_resp.sum(axis=(1,2))
 
             shower_stat = np.concatenate((num1, num2, num3))
@@ -148,7 +140,7 @@ def load_dataset(path, mode='sum'):
     full_dts = None
 
     with open(dataset_fname, 'rb') as file:
-        packed_arr = np.load(file)#, allow_pickle=True)
+        packed_arr = np.load(file, allow_pickle=True)
 
         X_arr = packed_arr['x']
         y_arr = packed_arr['y']

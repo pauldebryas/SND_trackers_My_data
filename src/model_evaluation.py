@@ -5,6 +5,9 @@ import os
 
 
 SCORES_DIR = 'results/scores/'
+TEST_SCORES_DIR = 'results/test_scores/'
+#PRED_DIR = 'results/pred/'
+#MODELS_DIR = 'results/models/'
 
 
 def comp_resolution(y_true, y_pred):
@@ -56,7 +59,7 @@ def save_scores(y_train, y_pred, save_file_prefix, folder_path=SCORES_DIR):
     scores_df.to_csv(file_path, index=True)
         
     return scores_df
-
+    
 
 def collect_all_scores(folder_path=SCORES_DIR):
     # get list of all files in a directory
@@ -83,3 +86,20 @@ def collect_all_scores(folder_path=SCORES_DIR):
         all_score_df[new_col_name] = new_scores[new_col_name].to_numpy()
 
     return all_score_df
+
+
+'''
+def save_predictions(y_true, y_pred, save_file_prefix, folder_path=PRED_DIR):
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+
+    pred_dict = {'true' : y_true,
+                 'pred' : y_pred}
+    
+    scores_df = pd.DataFrame.from_dict(scores_dict, orient = 'index')
+    
+    file_path = os.path.join(folder_path, save_file_prefix + '_scores.csv')
+    scores_df.to_csv(file_path, index=True)
+
+    return pred_dict
+'''
