@@ -82,13 +82,14 @@ def load_dataframes(params, paths_dict, step_size, files_num):
         
     return scifi_arr, mu_arr, en_arr
 
+
 # selecting events to ensure equal number of events for all particle types
 def balance_events_num(scifi_arr, mu_arr, en_arr):
     event_limit = min(len(en_arr['nuel']),
                       len(en_arr['numu']),
                       len(en_arr['nutau']))
 
-    for part_type in ['nuel', 'numu', 'nutau']:        
+    for part_type in PART_TYPE_ARR:        
         scifi_arr[part_type] = scifi_arr[part_type][:event_limit]
         mu_arr   [part_type] = mu_arr   [part_type][:event_limit]
         en_arr   [part_type] = en_arr   [part_type][:event_limit]
@@ -112,7 +113,7 @@ def merge_events_arrays(scifi_arr, mu_arr, en_arr):
     
     print("After Reduction  :\n")
 
-    for part_type in ['nuel', 'numu', 'nutau']:
+    for part_type in PART_TYPE_ARR:
         print("Particle type: " + part_type)
         print("  scifi_arr : " + str(len(scifi_arr[part_type])))
         print("  mu_arr    : " + str(len(mu_arr[part_type])))
